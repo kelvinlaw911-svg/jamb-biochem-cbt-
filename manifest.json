@@ -1,0 +1,8 @@
+{
+  "name": "JAMB BioChem CBT",
+  "short_name": "BioChem CBT",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b5cff"
+}

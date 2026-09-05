@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b5cff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>JAMB BioChem CBT</title>
+<style>
+:root{--blue:#0b5cff;--dark:#10213a;--bg:#f4f7fb;--card:#fff;--muted:#667085;--good:#16834b;--bad:#c62828;--line:#dce3ee}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}
+button,select{font:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
+header{background:var(--blue);color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #0002}
+header h1{font-size:20px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.9}
+main{max-width:900px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px #10213a0a}
+h2{font-size:20px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.primary{background:var(--blue);color:#fff;padding:13px 18px;border-radius:10px;font-weight:700}.secondary{background:#eef3fb;color:var(--dark);padding:12px 16px;border-radius:10px;font-weight:600}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.stats{display:flex;gap:10px;flex-wrap:wrap}.pill{background:#eef3fb;padding:8px 10px;border-radius:999px;font-size:13px}
+.topbar{display:flex;justify-content:space-between;gap:10px;align-items:center}.timer{font-weight:800;color:var(--blue)}
+.qnum{font-size:13px;color:var(--muted);margin-bottom:8px}.question{font-size:18px;line-height:1.45;font-weight:700;margin-bottom:16px}
+.option{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);padding:13px;border-radius:10px;margin:9px 0}.option.selected{border:2px solid var(--blue);background:#eef4ff}.option.correct{border-color:var(--good);background:#edf9f2}.option.wrong{border-color:var(--bad);background:#fff0f0}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:16px}.nav button{flex:1}
+.palette{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.dot{width:36px;height:36px;border-radius:8px;background:#eef3fb;color:var(--dark)}.dot.done{background:#dcecff}.dot.current{outline:2px solid var(--blue)}
+.result{text-align:center}.score{font-size:46px;font-weight:900;color:var(--blue)}.review{margin-top:14px;text-align:left}.review-item{border-top:1px solid var(--line);padding:13px 0}.small{font-size:13px;color:var(--muted)}.tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#eef3fb;margin:3px}
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}main{padding:10px}.card{padding:14px}.question{font-size:17px}}
+</style>
+</head>
+<body>
+<header><h1>JAMB BioChem CBT</h1><p>Biology + Chemistry • JAMB-focused practice</p></header>
+<main>
+<section id="home">
+<div class="card"><h2>Start a CBT</h2>
+<div class="grid">
+<div><label>Subject</label><select id="subject"><option value="mixed">Mixed Biology + Chemistry</option><option value="biology">Biology</option><option value="chemistry">Chemistry</option></select></div>
+<div><label>Number of questions</label><select id="count"><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select></div>
+<div><label>Time</label><select id="minutes"><option value="0">No timer</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+<div><label>Mode</label><select id="mode"><option value="all">All questions</option><option value="wrong">Wrong-answer retest</option></select></div>
+</div>
+<div class="actions"><button class="primary" onclick="startTest()">Start CBT</button><button class="secondary" onclick="showStats()">My Progress</button></div>
+</div>
+<div class="card"><h2>How it works</h2><div class="small">Choose a subject, question count and time. Your answers are saved in this browser. After submitting, you can review corrections and retake your wrong questions.</div></div>
+</section>
+
+<section id="quiz" class="hidden">
+<div class="card">
+<div class="topbar"><div><b id="subjectLabel"></b><div class="qnum" id="progressLabel"></div></div><div class="timer" id="timer">No timer</div></div>
+<div class="question" id="question"></div><div id="options"></div>
+<div class="nav"><button class="secondary" onclick="prevQ()">← Previous</button><button class="primary" onclick="nextQ()">Next →</button></div>
+<div class="actions"><button class="secondary" onclick="submitTest()">Submit Test</button><button class="secondary" onclick="goHome()">Exit</button></div>
+</div>
+<div class="card"><b>Question palette</b><div id="palette" class="palette"></div></div>
+</section>
+
+<section id="result" class="hidden">
+<div class="card result"><h2>Test Complete 🎯</h2><div class="score" id="score"></div><div id="resultText"></div>
+<div class="actions" style="justify-content:center"><button class="primary" onclick="retryWrong()">Retake Wrong</button><button class="secondary" onclick="goHome()">New Test</button></div></div>
+<div class="card"><h2>Corrections</h2><div id="review" class="review"></div></div>
+</section>
+
+<section id="stats" class="hidden">
+<div class="card"><h2>My Progress</h2><div class="stats" id="statsBox"></div><div class="actions"><button class="primary" onclick="goHome()">Back</button><button class="secondary" onclick="clearProgress()">Reset Progress</button></div></div>
+</section>
+</main><footer>JAMB BioChem CBT • Practice tool • Not an official JAMB website</footer>
+
+<script>
+const Q=[
+/* Chemistry */
+["chemistry","Separation & Purification","Which method is used to separate ethanol from water?","fractional distillation","filtration","sublimation","decantation"],
+["chemistry","Separation & Purification","Paper chromatography separates substances mainly according to differences in their?","solubility and adsorption","melting points","densities only","boiling points only"],
+["chemistry","Chemical Combination","The law stating that a pure compound always contains the same elements in the same proportions by mass is the law of?","definite proportions","multiple proportions","conservation of mass","reciprocal proportions"],
+["chemistry","Chemical Combination","If X has valency 3 and Y has valency 2, the formula of the compound is?","X2Y3","XY","X3Y2","XY2"],
+["chemistry","Atomic Structure","The particle with a relative charge of -1 is the?","electron","proton","neutron","nucleus"],
+["chemistry","Atomic Structure","The atomic number of an element is the number of?","protons","neutrons","nucleons","shells"],
+["chemistry","Periodicity","Across a period from left to right, atomic radius generally?","decreases","increases","remains constant","first increases then decreases"],
+["chemistry","Periodicity","Which is a halogen?","chlorine","sodium","magnesium","neon"],
+["chemistry","Chemical Bonding","The bond in sodium chloride is mainly?","ionic","covalent","metallic","hydrogen"],
+["chemistry","Chemical Bonding","The bonding in copper metal is?","metallic","ionic","covalent","hydrogen"],
+["chemistry","States of Matter","The change from liquid to gas at the surface of a liquid is?","evaporation","freezing","condensation","sublimation"],
+["chemistry","States of Matter","Particles in a solid generally?","vibrate about fixed positions","move freely far apart","have no motion","flow past one another"],
+["chemistry","Energy Changes","A reaction that absorbs heat from its surroundings is?","endothermic","exothermic","neutral","catalytic"],
+["chemistry","Energy Changes","Thermal decomposition of calcium carbonate is generally?","endothermic","exothermic","redox-free","reversible only"],
+["chemistry","Chemical Equilibrium","At dynamic equilibrium, the forward and reverse reactions have?","equal rates","equal concentrations","stopped completely","equal activation energies"],
+["chemistry","Chemical Equilibrium","A catalyst at equilibrium?","does not change the equilibrium position","always shifts equilibrium right","shifts equilibrium left","increases the equilibrium constant"],
+["chemistry","Hydrogen & Chlorine","Hydrogen burns in oxygen to form?","water","hydrogen chloride","hydrogen peroxide only","ammonia"],
+["chemistry","Hydrogen & Chlorine","Chlorine bleaches mainly because it is a strong?","oxidizing agent","reducing agent","base","catalyst"],
+["chemistry","Oxygen & Compounds","The gas that supports combustion is?","oxygen","nitrogen","hydrogen","carbon dioxide"],
+["chemistry","Oxygen & Compounds","Rusting of iron requires oxygen and?","water","nitrogen","chlorine","carbon dioxide only"],
+["chemistry","Nitrogen & Compounds","The major gas in air is?","nitrogen","oxygen","carbon dioxide","hydrogen"],
+["chemistry","Nitrogen & Compounds","Haber process is used industrially to produce?","ammonia","nitric acid","sulphuric acid","urea directly"],
+["chemistry","Sulphur & Compounds","Sulphuric acid has the formula?","H2SO4","H2SO3","HNO3","HCl"],
+["chemistry","Sulphur & Compounds","Sulphur dioxide is commonly produced by burning?","sulphur","nitrogen","sodium chloride","calcium carbonate"],
+["chemistry","Carbon & Compounds","Complete combustion of a hydrocarbon produces?","carbon dioxide and water","carbon monoxide only","carbon and hydrogen","methane and oxygen"],
+["chemistry","Carbon & Compounds","The black solid formed when copper(II) oxide is heated strongly is associated with?","carbon reduction reactions","chlorine bleaching","nitrogen fixation","sulphur oxidation"],
+["chemistry","Metals","Which metal is extracted by electrolysis because it is very reactive?","aluminium","copper","iron","silver"],
+["chemistry","Metals","Copper(II) oxide is?","black","white","blue","green"],
+["chemistry","Metals","A common property of metals is that they are good conductors of?","heat and electricity","only sound","only light","water"],
+/* Biology */
+["biology","Cell Biology","The control centre of a typical eukaryotic cell is the?","nucleus","ribosome","cell wall","vacuole"],
+["biology","Cell Biology","The site of aerobic respiration in a cell is mainly the?","mitochondrion","chloroplast","nucleus","ribosome"],
+["biology","Classification","Organisms are classified into groups mainly to?","make identification and study easier","make them reproduce faster","increase their size","change their genes"],
+["biology","Adaptation","A xerophyte may reduce water loss by having?","sunken stomata","large thin leaves","many exposed stomata","soft floating roots"],
+["biology","Evolution","Natural selection favours organisms that?","are better adapted to their environment","are always the largest","never vary","cannot reproduce"],
+["biology","Variation & Heredity","The basic unit of heredity is the?","gene","tissue","organ","enzyme"],
+["biology","Reproduction","In humans, fertilization normally occurs in the?","oviduct","uterus","cervix","vagina"],
+["biology","Reproduction","The male gamete in humans is the?","sperm","ovum","zygote","embryo"],
+["biology","Growth","Growth in multicellular organisms involves mainly an increase in?","cell number and/or cell size","number of species","blood groups","chromosomes only"],
+["biology","Coordination","The hormone that lowers blood glucose concentration is?","insulin","adrenaline","thyroxine","glucagon"],
+["biology","Ecology","The natural place where an organism lives is its?","habitat","niche","population","community"],
+["biology","Ecology","Only about what percentage of energy is transferred to the next trophic level?","10%","50%","75%","100%"],
+["biology","Ecology","A group of organisms of the same species living in an area is a?","population","community","biome","ecosystem"],
+["biology","Plant Biology","Fungi typically have cell walls made largely of?","chitin","cellulose","lignin only","starch"],
+["biology","Plant Biology","Wind generally increases the rate of?","transpiration","photosynthesis only","fertilization","germination only"],
+["biology","Soil","The uppermost soil layer rich in humus is usually the?","topsoil","bedrock","parent rock","subsoil only"],
+["biology","Habitats","A biome is best described as a large ecological region characterized by its?","climate and dominant vegetation","single animal species","soil colour only","human population only"],
+["biology","Population Ecology","Population density is the number of individuals per unit of?","area or volume","time only","food","species"],
+["biology","Nutrition","Green plants manufacture food mainly by?","photosynthesis","respiration","transpiration","excretion"],
+["biology","Transport","The tissue that transports water and mineral salts upward in plants is?","xylem","phloem","epidermis","cambium"],
+["biology","Respiration","The end products of aerobic respiration include?","carbon dioxide and water","oxygen and glucose","nitrogen and water","starch and oxygen"],
+["biology","Excretion","The main nitrogenous waste excreted by humans is?","urea","glucose","starch","oxygen"],
+["biology","Nervous System","The basic functional unit of the nervous system is the?","neuron","nephron","alveolus","villus"],
+["biology","Circulation","The blood vessel that carries blood away from the heart is an?","artery","vein","capillary","venule"],
+["biology","Disease","A disease caused by Plasmodium and transmitted by female Anopheles mosquito is?","malaria","cholera","typhoid","tuberculosis"],
+["biology","Reproduction","The structure where a developing embryo implants is the?","uterus","oviduct","ovary","cervix"],
+["biology","Ecology","Decomposers are important because they?","return nutrients to the environment","remove all oxygen","stop nutrient cycles","produce sunlight"]
+];
+
+let state={questions:[],answers:[],i:0,seconds:0,interval:null,wrong:[],lastWrong:[]};
+const $=id=>document.getElementById(id);
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function show(id){["home","quiz","result","stats"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
+function startTest(source=null){
+ let subj=source||$("subject").value, n=+(source?Math.min(50,state.lastWrong.length):$("count").value);
+ let pool=Q.filter(q=>subj==="mixed"||q[0]===subj);
+ if(source==="wrong") pool=state.lastWrong;
+ if(!pool.length){alert("No wrong questions saved yet. Complete a test first.");return}
+ state.questions=shuffle(pool).slice(0,n); state.answers=Array(state.questions.length).fill(null); state.i=0;
+ state.seconds=source?0:+$("minutes").value*60; show("quiz"); render(); startTimer();
+}
+function startTimer(){clearInterval(state.interval);if(state.seconds<=0){$("timer").textContent="No timer";return}
+ updateTimer();state.interval=setInterval(()=>{state.seconds--;updateTimer();if(state.seconds<=0){clearInterval(state.interval);submitTest()}},1000)}
+function updateTimer(){let m=Math.floor(state.seconds/60),s=state.seconds%60;$("timer").textContent=`${m}:${String(s).padStart(2,"0")}`}
+function render(){
+ let q=state.questions[state.i]; $("subjectLabel").textContent=q[0].toUpperCase()+" • "+q[1];
+ $("progressLabel").textContent=`Question ${state.i+1} of ${state.questions.length}`;
+ $("question").textContent=q[2]; let opts=shuffle([{t:q[3],ok:true},{t:q[4],ok:false},{t:q[5],ok:false},{t:q[6],ok:false}]);
+ // keep correct answer identity through text
+ $("options").innerHTML="";
+ opts.forEach(o=>{let b=document.createElement("button");b.className="option"+(state.answers[state.i]===o.t?" selected":"");b.textContent=o.t;b.onclick=()=>{state.answers[state.i]=o.t;render()};$("options").appendChild(b)});
+ let pal="";for(let j=0;j<state.questions.length;j++)pal+=`<button class="dot ${state.answers[j]?'done ':''}${j===state.i?'current':''}" onclick="state.i=${j};render()">${j+1}</button>`;$("palette").innerHTML=pal;
+}
+function prevQ(){if(state.i>0){state.i--;render()}}function nextQ(){if(state.i<state.questions.length-1){state.i++;render()}else submitTest()}
+function submitTest(){
+ clearInterval(state.interval);let score=0,wrong=[];state.questions.forEach((q,i)=>{if(state.answers[i]===q[3])score++;else wrong.push(q)});
+ state.lastWrong=wrong;let total=state.questions.length;let pct=Math.round(score/total*100);
+ let p=JSON.parse(localStorage.getItem("jbc_progress")||'{"tests":0,"correct":0,"attempted":0}');
+ p.tests++;p.correct+=score;p.attempted+=total;localStorage.setItem("jbc_progress",JSON.stringify(p));
+ $("score").textContent=`${score}/${total}`;$("resultText").innerHTML=`<b>${pct}%</b><br><span class="small">${wrong.length} question(s) to revise.</span>`;
+ $("review").innerHTML=state.questions.map((q,i)=>{let ok=state.answers[i]===q[3];return `<div class="review-item"><span class="tag">${q[0]}</span> <span class="tag">${q[1]}</span><br><b>${i+1}. ${q[2]}</b><br>Your answer: <span style="color:${ok?'var(--good)':'var(--bad)'}">${state.answers[i]||"Not answered"}</span><br>Correct answer: <b>${q[3]}</b></div>`}).join("");
+ show("result");
+}
+function retryWrong(){if(!state.lastWrong.length){alert("Excellent — you got everything correct! 🔥");return}startTest("wrong")}
+function goHome(){clearInterval(state.interval);show("home")}
+function showStats(){let p=JSON.parse(localStorage.getItem("jbc_progress")||'{"tests":0,"correct":0,"attempted":0}');let avg=p.attempted?Math.round(p.correct/p.attempted*100):0;$("statsBox").innerHTML=`<span class="pill">Tests: ${p.tests}</span><span class="pill">Questions: ${p.attempted}</span><span class="pill">Correct: ${p.correct}</span><span class="pill">Accuracy: ${avg}%</span>`;show("stats")}
+function clearProgress(){localStorage.removeItem("jbc_progress");alert("Progress reset.");showStats()}
+</script>
+</body></html>
